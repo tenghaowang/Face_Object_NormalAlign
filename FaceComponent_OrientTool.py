@@ -90,13 +90,35 @@ def normalSnap(*arg):
 		maya.delete(cluster)
 	maya.delete(dup_object)
 
+def add_object(*arg):
+	selectobj=maya.ls(sl=True)
+	exsitingobj=maya.textScrollList(targetObjBox,q=True,ai=True)
+	if exsitingobj==None:
+		exsitingobj=[]
+	newobj=list(set(selectobj)-set(exsitingobj))
+	maya.textScrollList(targetObjBox,e=True,a=newobj)
+	#if no object selected
+	if not maya.textScrollList(targetObjBox,q=True,si=True):
+		maya.textScrollList(targetObjBox,e=True,si=newobj[0])
 
-
+def remove_object(*arg):
+	selectobj=maya.textScrollList(targetObjBox,q=True,si=True)
+	print selectobj
+	maya.textScrollList(targetObjBox,e=True,ri=selectobj)
 
 
 def normalSnaPanel():	
-	maya.window(windowID,widthHeight=(300,250),title='Scatter',s=True,rtf=True)
-	layout=maya.columnLayout(w=300,h=250)
+	maya.window(windowID,widthHeight=(300,250),title='Normal Snap Tool',s=True,rtf=True)
+	maya.columnLayout(w=300,h=250,rs=2)
+	maya.text(l='Normal Snap Tool',al='center',w=300,fn='boldLabelFont')
+	maya.columnLayout(cat=('left',50))
+	global targetObjBox
+	targetObjBox=maya.textScrollList(w=200,h=50)
+	maya.columnLayout(h=10)
+	maya.setParent('..')
+	maya.rowLayout(nc=2,cat=(2,'left',20))
+	maya.button(l='Add object',w=90,c=add_object)
+	maya.button(l='Remove object',w=90,c=remove_object)
 	maya.showWindow(windowID)
 def normalSnapGUI():
 	if (maya.window(windowID,ex=True)):
