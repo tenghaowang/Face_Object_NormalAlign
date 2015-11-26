@@ -2,12 +2,13 @@ import maya.cmds as maya
 from functools import partial
 
 #used for the face shared the same normals
-component=maya.ls(sl=True)
+windowID='normalSnap'
+#component=maya.ls(sl=True)
 normal=[]
 facecluster=[]
-objectname=component[0].split('.')[0]
-dup_object=maya.duplicate(objectname,n='dup_'+objectname)
-targetobj=component[-1]
+#objectname=component[0].split('.')[0]
+#dup_object=maya.duplicate(objectname,n='dup_'+objectname)
+#targetobj=component[-1]
 R_channel_keyable=False
 T_channel_keyable=False
 #for com in component:
@@ -65,30 +66,49 @@ def main():
 			print grp_obj
 			maya.normalConstraint(grp_obj[1],targetobj,aim=(0,1,0),u=(0,1,0),wut='vector')
 
-channeldetection()
-main()
 
-print targetobj
+def normalSnap(*arg):
+	channeldetection()
+	main()
+			#print targetobj
+	#position constraint the targetobj
+	print T_channel_keyable
+	print R_channel_keyable
+	if T_channel_keyable:
+		maya.setKeyframe(targetobj,at='translataeX')
+		maya.setKeyframe(targetobj,at='translateY')
+		maya.setKeyframe(targetobj,at='translateZ')
+		maya.delete(targetobj+'_pointConstraint*')
+	  
+	if R_channel_keyable:
+		maya.setKeyframe(targetobj,at='rotateX')
+		maya.setKeyframe(targetobj,at='rotateY')
+		maya.setKeyframe(targetobj,at='rotateZ')	
+		maya.delete(targetobj+'_normalConstraint*')
 
-		#print targetobj
-#position constraint the targetobj
-print T_channel_keyable
-print R_channel_keyable
-if T_channel_keyable:
-	maya.setKeyframe(targetobj,at='translateX')
-	maya.setKeyframe(targetobj,at='translateY')
-	maya.setKeyframe(targetobj,at='translateZ')
-	maya.delete(targetobj+'_pointConstraint*')
-  
-if R_channel_keyable:
-	maya.setKeyframe(targetobj,at='rotateX')
-	maya.setKeyframe(targetobj,at='rotateY')
-	maya.setKeyframe(targetobj,at='rotateZ')	
-	maya.delete(targetobj+'_normalConstraint*')
+	for cluster in facecluster:
+		maya.delete(cluster)
+	maya.delete(dup_object)
 
-for cluster in facecluster:
-	maya.delete(cluster)
-maya.delete(dup_object)
+
+
+
+
+def normalSnaPanel():	
+	maya.window(windowID,widthHeight=(300,250),title='Scatter',s=True,rtf=True)
+	layout=maya.columnLayout(w=300,h=250)
+	maya.showWindow(windowID)
+def normalSnapGUI():
+	if (maya.window(windowID,ex=True)):
+		maya.deleteUI(windowID, wnd=True)
+	normalSnaPanel()
+	
+normalSnapGUI()	
+
+
+
+
+
 
 #normal caluculatation
 '''print com
