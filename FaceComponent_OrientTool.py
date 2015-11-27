@@ -4,8 +4,8 @@ from functools import partial
 #used for the face shared the same normals
 windowID='normalSnap'
 #component=maya.ls(sl=True)
-normal=[]
-facecluster=[]
+global snap_flag
+snap_flag=False
 #objectname=component[0].split('.')[0]
 #dup_object=maya.duplicate(objectname,n='dup_'+objectname)
 #targetobj=component[-1]
@@ -15,11 +15,12 @@ T_channel_keyable=False
 	#if(maya.objectType(com,i='transform')):
 		#targetobj=com
 def channeldetection():
-	if((not maya.getAttr(targetobj+'.translateX',l=True)) and (not maya.getAttr(targetobj+'.translateY',l=True)) and (not maya.getAttr(targetobj+'.translateZ',l=True))):
+	targetObj=maya.textScrollList(targetObjBox,q=True,si=True)[0]	
+	if((not maya.getAttr(targetObj+'.translateX',l=True)) and (not maya.getAttr(targetObj+'.translateY',l=True)) and (not maya.getAttr(targetObj+'.translateZ',l=True))):
 		print 'translation channel unlock!'
-		key_translateX=maya.listConnections(targetobj+'.translateX',s=True,d=False)
-		key_translateY=maya.listConnections(targetobj+'.translateY',s=True,d=False)
-		key_translateZ=maya.listConnections(targetobj+'.translateZ',s=True,d=False)
+		key_translateX=maya.listConnections(targetObj+'.translateX',s=True,d=False)
+		key_translateY=maya.listConnections(targetObj+'.translateY',s=True,d=False)
+		key_translateZ=maya.listConnections(targetObj+'.translateZ',s=True,d=False)
 		if(key_translateX or key_translateY or key_translateZ):
 			print 'detect translation connection at the attribute channel'
 			global T_channel_keyable
@@ -27,11 +28,11 @@ def channeldetection():
 	else:
 		maya.error('Found locked Rotation channel')
 
-	if((not maya.getAttr(targetobj+'.rotateX',l=True)) and (not maya.getAttr(targetobj+'.rotateY',l=True)) and (not maya.getAttr(targetobj+'.rotateZ',l=True))):
+	if((not maya.getAttr(targetObj+'.rotateX',l=True)) and (not maya.getAttr(targetObj+'.rotateY',l=True)) and (not maya.getAttr(targetObj+'.rotateZ',l=True))):
 		print 'rotation channel unlock!'
-		key_RotateX=maya.listConnections(targetobj+'.rotateX',s=True,d=False)
-		key_RotateY=maya.listConnections(targetobj+'.rotateY',s=True,d=False)
-		key_RotateZ=maya.listConnections(targetobj+'.rotateZ',s=True,d=False)
+		key_RotateX=maya.listConnections(targetObj+'.rotateX',s=True,d=False)
+		key_RotateY=maya.listConnections(targetObj+'.rotateY',s=True,d=False)
+		key_RotateZ=maya.listConnections(targetObj+'.rotateZ',s=True,d=False)
 		if(key_RotateX or key_RotateY or key_RotateZ):
 			print 'detect rotation connection at the attribute channel'
 			global R_channel_keyable
@@ -41,6 +42,17 @@ def channeldetection():
 
 
 def main():
+	global facecluster
+	facecluster=[]
+	targetObj=maya.textScrollList(targetObjBox,q=True,si=True)[0]
+	if targetObj==None:
+		print '123'
+		return	
+	component=maya.ls(sl=True)
+	objectname=component[0].split('.')[0]
+	global dup_object
+	dup_object=maya.duplicate(objectname,n='dup_'+objectname)
+	print targetObj
 	for com in component:
 		if(maya.objectType(com,i='mesh')):
 			raw_data=maya.polyInfo(com,fv=True)[0]
@@ -50,45 +62,44 @@ def main():
 			#print raw_verindex
 			verindex=[]  
 			ver_all=raw_verindex.split(' ')
-			print '1'
 			#print ver_all
 			for ver in ver_all:
 				if ver != ''and ver != '\n':
 					verindex.append(ver)
+			print verindex
 			for ver in verindex:
+				print objectname
 				cluster_temp=maya.cluster(objectname+'.vtx[{0}]'.format(ver),en=True,rel=True)
-				maya.pointConstraint(cluster_temp,targetobj,o=(0,0,0))
+				maya.pointConstraint(cluster_temp,targetObj,o=(0,0,0))
 				facecluster.append(cluster_temp)
-			print facecluster
-			print dup_object[0]+com.split('.')[1]
+			#print facecluster
+			#print dup_object[0]+com.split('.')[1]
 			maya.polyChipOff(dup_object[0]+'.'+com.split('.')[1],kft=True,dup=True,off=0,ch=True)
 			grp_obj=maya.polySeparate(dup_object,o=True,n='seperate_'+dup_object[0])
 			print grp_obj
-			maya.normalConstraint(grp_obj[1],targetobj,aim=(0,1,0),u=(0,1,0),wut='vector')
-
-
-def normalSnap(*arg):
-	channeldetection()
-	main()
-			#print targetobj
-	#position constraint the targetobj
+			maya.normalConstraint(grp_obj[1],targetObj,aim=(0,1,0),u=(0,1,0),wut='vector')
 	print T_channel_keyable
 	print R_channel_keyable
 	if T_channel_keyable:
-		maya.setKeyframe(targetobj,at='translataeX')
-		maya.setKeyframe(targetobj,at='translateY')
-		maya.setKeyframe(targetobj,at='translateZ')
-		maya.delete(targetobj+'_pointConstraint*')
+		maya.setKeyframe(targetObj,at='translataeX')
+		maya.setKeyframe(targetObj,at='translateY')
+		maya.setKeyframe(targetObj,at='translateZ')
+		maya.delete(targetObj+'_pointConstraint*')
 	  
 	if R_channel_keyable:
-		maya.setKeyframe(targetobj,at='rotateX')
-		maya.setKeyframe(targetobj,at='rotateY')
-		maya.setKeyframe(targetobj,at='rotateZ')	
-		maya.delete(targetobj+'_normalConstraint*')
-
+		maya.setKeyframe(targetObj,at='rotateX')
+		maya.setKeyframe(targetObj,at='rotateY')
+		maya.setKeyframe(targetObj,at='rotateZ')	
+		maya.delete(targetObj+'_normalConstraint*')
+	print facecluster
 	for cluster in facecluster:
-		maya.delete(cluster)
+		maya.delete(cluster[0])
 	maya.delete(dup_object)
+
+
+def normalSnap(*arg):
+	#channeldetection()
+	main()
 
 def add_object(*arg):
 	selectobj=maya.ls(sl=True)
@@ -108,8 +119,8 @@ def remove_object(*arg):
 
 
 def normalSnaPanel():	
-	maya.window(windowID,widthHeight=(300,250),title='Normal Snap Tool',s=True,rtf=True)
-	maya.columnLayout(w=300,h=250,rs=2)
+	maya.window(windowID,widthHeight=(300,150),title='Normal Snap Tool',s=True,rtf=True)
+	maya.columnLayout(w=300,h=150,rs=2)
 	maya.text(l='Normal Snap Tool',al='center',w=300,fn='boldLabelFont')
 	maya.columnLayout(cat=('left',50))
 	global targetObjBox
@@ -119,6 +130,13 @@ def normalSnaPanel():
 	maya.rowLayout(nc=2,cat=(2,'left',20))
 	maya.button(l='Add object',w=90,c=add_object)
 	maya.button(l='Remove object',w=90,c=remove_object)
+	maya.setParent('..')
+	maya.columnLayout(h=10)
+	maya.setParent('..')
+	maya.rowLayout(nc=2,cat=(2,'left',0))
+	dupcheckBox=maya.checkBox(l='Duplicate',w=80)
+	global snapbutton
+	snapbutton=maya.button(l='SNAP!',w=120,bgc=[0.4,0.4,0.4],c=normalSnap)
 	maya.showWindow(windowID)
 def normalSnapGUI():
 	if (maya.window(windowID,ex=True)):
